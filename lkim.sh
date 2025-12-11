@@ -2,9 +2,11 @@
 
 # 1. Подключение Core модулей 
 
-source core/utils.sh
-source core/baseline.sh
-source core/logger.sh
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
+
+source "$SCRIPT_DIR/core/utils.sh"
+source "$SCRIPT_DIR/core/logger.sh"
+source "$SCRIPT_DIR/core/baseline.sh"
 
 #2. Запуск полной проверки
 run_all_checks() {
