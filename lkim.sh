@@ -15,10 +15,10 @@ run_all_checks() {
 	logger.log "SYSTEM" "Полная проверка завершена"
 }
 #3. Обработка аргументов
-if [[ "$1 == "--save-baseline"]]; then
+if [[ "$1" == "--save-baseline"]]; then
 	save_current_baseline #Функция в core/baseline.sh
 	exit 0
-elif [[ "$1 =="--run-check ]]; then
+elif [[ "$1" == "--run-check" ]]; then
 	run_all_checks
 	exit 0
 else
