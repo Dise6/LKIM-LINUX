@@ -11,7 +11,7 @@ run_all_checks() {
 	logger.log "SYSTEM" "Начало полной проверки системы..."
 	# Здесь все модули для проверки 
 	logger.log "SYSTEM" "Полная проверка завершена"
-
+}
 #3. Обработка аргументов
 if [[ "$1 == "--save-baseline"]]; then
 	save_current_baseline #Функция в core/baseline.sh
