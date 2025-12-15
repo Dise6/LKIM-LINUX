@@ -6,7 +6,7 @@ BASELINE_DIR="baseline"
 #Функция для сохранения данных (Сбор текуших данных со всех проверочных модулей)
 save_current_baseline() {
 	#1. Проверка существования каталога baseline
-	if [[! -d "$BASELINE_DIR" ]]; then
+	if [[ ! -d "$BASELINE_DIR" ]]; then
 		mkdir -p "BASELINE_DIR"
 		logger.log "BASELINE_DIR" "Каталог baseline Создан."
 	fi
