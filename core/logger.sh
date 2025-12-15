@@ -1,3 +1,4 @@
+#!/bin/bash
 logger.log(){
 	local MODULE="$1"
 	local MESSAGE="$1"
