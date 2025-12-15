@@ -13,6 +13,14 @@ save_current_baseline() {
 
 	logger.log "BASELINE" "Начинается сбор и хранение эталонных данных..."
 
+	if source checks/module.sh 2>/dev/null; then
+		collect_module_data "$BASELINE_DIR/module.bl"
+	fi
+
+	if source checks/syscalls.sh 2>/dev/bull; then
+		collect_syscalls_data "BASELINE_DIR/syscalls.bl"
+	fi
+
 	#Пример вызова модулей ядра(checks/module.sh)
 	if source checks/module.sh 2>/dev/null; then
 		collect_module_data "BASELINE_DIR/module.bl"
