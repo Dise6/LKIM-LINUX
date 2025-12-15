@@ -30,8 +30,8 @@ run_check_modules() {
 	# grep '^\+' - Найти только строки, добавленные в текущем файле (Новые модули)
 	# grep '^-' - Найти только строки, отсутствующие в текущем файле (Удаленные модули)
 
-	local NEW_MODULES=$(diff -U -w "BASELINE_FILE" "TEMP_CURRENT_FILE" | grep '^\+' | grep -v '^\+\+\+')
-	local REMOVED_MODULES=$(diff -U 0 -w "BASELINE_FILE" "TEMP_CURRENT_FILE" | grep '^-' | grep -v '^\-\-\-')
+	local NEW_MODULES=$(diff -U -w "$BASELINE_FILE" "$TEMP_CURRENT_FILE" | grep '^\+' | grep -v '^\+\+\+')
+	local REMOVED_MODULES=$(diff -U 0 -w "$BASELINE_FILE" "$TEMP_CURRENT_FILE" | grep '^-' | grep -v '^\-\-\-')
 
 	# Формируем отчет (логирование)
 
