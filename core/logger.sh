@@ -16,6 +16,7 @@ logger.log(){
       local COLOR_RESET='\033[0m'
       local COLOR_RED='\033[31m'
       local COLOR_YELLOW='\033[33m'
+      local COLOR_GREEN='\033[32m'
 
       case "MODULE" in
 	"ERROR")
@@ -24,6 +25,9 @@ logger.log(){
 	"ALERT")
 		echo -e "${COLOR_YELLOW}$LOG_ENTRY${COLOR_RESET}"
 		;;
+	"SUCCESS")
+		echo -e "${COLOR_GREEN}$LOG_ENTRY${COLOR_RESET}"
+
 	*)
 		echo "$LOG_ENTRY"
 		;;
