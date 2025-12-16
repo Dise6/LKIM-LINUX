@@ -1,19 +1,19 @@
 #!/bin/bash
 
-#Функция для сбора дыннх modules.sh
+#Функция для сбора дыннх module.sh
 collect_module_data() {
 	local OUTPUT_FILE="$1"
 
 	#1  Считываем /proc/modules и загружаем список загруженных модулей в файл.
 	cat /proc/modules >  "$OUTPUT_FILE"
 
-	logger.log "MODULES" "Список модулей ядра сохранен в $OUTPUT_FILE"
+	logger.log "MODULE" "Список модулей ядра сохранен в $OUTPUT_FILE"
 }
 #Функция проверки
 run_check_modules() {
-	logger.log "MODULES" "Начало проверки модуля ядра..."
+	logger.log "MODULE" "Начало проверки модуля ядра..."
 
-	local BASELINE_FILE="baseline/modules.bl"
+	local BASELINE_FILE="baseline/module.bl"
 	local TEMP_CURRENT_FILE="temp/lkim_current_modules.tmp"
 
 	if [[ ! -f "BASELINE_FILE" ]]; then
