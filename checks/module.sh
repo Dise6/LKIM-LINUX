@@ -5,7 +5,7 @@ collect_module_data() {
 	local OUTPUT_FILE="$1"
 
 	#1  Считываем /proc/modules и загружаем список загруженных модулей в файл.
-	cat /proc/modules >  "$OUTPUT_FILE"
+	cat /proc/modules > "$OUTPUT_FILE"
 
 	logger.log "MODULE" "Список модулей ядра сохранен в $OUTPUT_FILE"
 }
