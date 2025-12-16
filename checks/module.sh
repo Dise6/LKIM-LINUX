@@ -16,7 +16,7 @@ run_check_modules() {
 	local BASELINE_FILE="baseline/modules.bl"
 	local TEMP_CURRENT_FILE="temp/lkim_current_modules.tmp"
 
-	if [[ ! -f "BASELINE_FILE" ]]; then
+	if [[ ! -f "$BASELINE_FILE" ]]; then
 		logger.log "MODULES" "Эталонный файл $BASELINE_FILE не найден. Невозможно выполнить проверку."
 		return 1
 	fi
@@ -39,13 +39,13 @@ run_check_modules() {
 		logger.log "ALERT" "Обнаружены НОВЫЕ модули ядра (потенциально rootkit): $NEW_MODULES"
 	fi
 
-	if [[ -n "REMOVED_MODULES" ]]; then
+	if [[ -n "$REMOVED_MODULES" ]]; then
 		logger.log "WARNING" "Обнаружены УДАЛЕННЫЕ/ИСПАРЯЮЩИЕСЯ модули: $REMOVED_MODULES"
 	fi
 
-	if [[ -z "NEW_MODULES" ]] && [[ -z "REMOVED_MODULES" ]]; then
+	if [[ -z "$NEW_MODULES" ]] && [[ -z "REMOVED_MODULES" ]]; then
 		logger.log "MODULES" "Целостность модулей ядра потверждена. Различий нет."
 	fi
 
-	rm -f "TEMP_CURRENT_FILE"
+	rm -f "$TEMP_CURRENT_FILE"
 }
