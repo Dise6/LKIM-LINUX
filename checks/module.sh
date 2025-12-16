@@ -13,8 +13,8 @@ collect_module_data() {
 run_check_modules() {
 	logger.log "MODULE" "Начало проверки модуля ядра..."
 
-	local BASELINE_FILE="$baseline/modules.bl"
-	local TEMP_CURRENT_FILE="$temp/lkim_current_modules.tmp"
+	local BASELINE_FILE="baseline/modules.bl"
+	local TEMP_CURRENT_FILE="temp/lkim_current_modules.tmp"
 
 	if [[ ! -f "$BASELINE_FILE" ]]; then
 		logger.log "MODULES" "Эталонный файл $BASELINE_FILE не найден. Невозможно выполнить проверку."
