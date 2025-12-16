@@ -37,12 +37,13 @@ run_check_syscalls() {
 
 	local BASELINE_FILE="baseline/syscalls.bl"
 
-	if [[ ! -f "BASELINE_FILE" ]]; then
+	if [[ ! -f "$BASELINE_FILE" ]]; then
 		logger.log "SYSCALLS" "Эталонный файл $BASELINE_FILE не найден. Невозможно выполнить проверк"
+		return 1
 	fi 
 
 	local TEMP_CURRENT_FILE="temp/lkim_current_syscalls.tmp"
-	grep ' sys_ ' /proc/kallsyms | awk '{print $NF}' > "TEMP_CURRENT_FILE"
+	grep ' sys_ ' /proc/kallsyms | awk '{print $NF}' > "$TEMP_CURRENT_FILE"
 
 	local DIFF_OUTPUT=$(diff -u -w "$BASELINE_FILE" "$TEMP_CURRENT_FILE")
 
