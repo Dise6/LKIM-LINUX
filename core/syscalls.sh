@@ -8,7 +8,7 @@ get_system_map_file() {
 	local SYSTEM_MAP="/boot/System.map-$KERNEL_VERSION"
 
 	if [[ -f "$SYSTEM_MAP" ]]; then
-		echo "SYSTEM_MAP"
+		echo "$SYSTEM_MAP"
 	else
 		logger.log "WARNING" "Файл System.map для ядра $KERNEL_VERSION не найден в $SYSTEM_MAP."
 		return 1
@@ -25,7 +25,7 @@ collect_syscalls_data() {
 		return 1
 	fi
 
-	grep ' sys_ ' "$SYSTEM_MAP_FILE" | awk '{print $NF}' > "OUTPUT_FILE"
+	grep ' sys_ ' "$SYSTEM_MAP_FILE" | awk '{print $NF}' > "$OUTPUT_FILE"
 
 	logger.log "SYSCALLS" "Список системных вызово сохранен в $OUTPUT_FILE"
 
@@ -44,10 +44,10 @@ run_check_syscalls() {
 	local TEMP_CURRENT_FILE="temp/lkim_current_syscalls.tmp"
 	grep ' sys_ ' /proc/kallsyms | awk '{print $NF}' > "TEMP_CURRENT_FILE"
 
-	local DIFF_OUTPUT=$(diff -U 0 -w "BASELINE_FILE" "$TEMP_CURRENT_FILE")
+	local DIFF_OUTPUT=$(diff -u -w "$BASELINE_FILE" "$TEMP_CURRENT_FILE")
 
 	local NEW_SYSCALLS=$(echo "$DIFF_OUTPUT" | grep '^\+' | grep -v '^\+\+\+')
-	local REMOVED_SYSCALLS=$(echo "DIFF_OUTPUT" | grep '^-' | grep -v '^\-\-\-')
+	local REMOVED_SYSCALLS=$(echo "$DIFF_OUTPUT" | grep '^-' | grep -v '^\-\-\-')
 
 	if [[ -n "$NEW_SYSCALLS" ]]; then
 		logger.log "ALERT" "Обнаружены НОВЫЕ системные вызовы (потенциальная инъекция): $NEW_SYSCALLS"
