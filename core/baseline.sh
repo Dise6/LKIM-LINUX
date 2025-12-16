@@ -23,7 +23,7 @@ save_current_baseline() {
 
 	#Пример вызова модулей ядра(checks/module.sh)
 	if source checks/module.sh 2>/dev/null; then
-		collect_module_data "BASELINE_DIR/module.bl"
+		collect_module_data "BASELINE_DIR/modules.bl"
 	else
 		logger.log "ERROR" "Не удалось подключить checks/module.sh"
 	fi
