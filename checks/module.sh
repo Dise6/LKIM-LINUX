@@ -13,8 +13,8 @@ collect_module_data() {
 run_check_modules() {
 	logger.log "MODULE" "Начало проверки модуля ядра..."
 
-	local BASELINE_FILE="baseline/modules.bl"
-	local TEMP_CURRENT_FILE="temp/lkim_current_modules.tmp"
+	local BASELINE_FILE="$baseline/modules.bl"
+	local TEMP_CURRENT_FILE="$temp/lkim_current_modules.tmp"
 
 	if [[ ! -f "$BASELINE_FILE" ]]; then
 		logger.log "MODULES" "Эталонный файл $BASELINE_FILE не найден. Невозможно выполнить проверку."
@@ -30,8 +30,8 @@ run_check_modules() {
 	# grep '^\+' - Найти только строки, добавленные в текущем файле (Новые модули)
 	# grep '^-' - Найти только строки, отсутствующие в текущем файле (Удаленные модули)
 
-	local NEW_MODULES=$(diff -U -w "$BASELINE_FILE" "$TEMP_CURRENT_FILE" | grep '^\+' | grep -v '^\+\+\+')
-	local REMOVED_MODULES=$(diff -U 0 -w "$BASELINE_FILE" "$TEMP_CURRENT_FILE" | grep '^-' | grep -v '^\-\-\-')
+	local NEW_MODULES=$(diff -u -w "$BASELINE_FILE" "$TEMP_CURRENT_FILE" | grep '^\+' | grep -v '^\+\+\+')
+	local REMOVED_MODULES=$(diff -u -w "$BASELINE_FILE" "$TEMP_CURRENT_FILE" | grep '^-' | grep -v '^\-\-\-')
 
 	# Формируем отчет (логирование)
 

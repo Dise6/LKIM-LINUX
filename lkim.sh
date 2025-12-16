@@ -8,6 +8,8 @@ source "$SCRIPT_DIR/core/utils.sh"
 source "$SCRIPT_DIR/core/logger.sh"
 source "$SCRIPT_DIR/core/baseline.sh"
 
+mkdir -p temp
+
 #2. Запуск полной проверки
 run_all_checks() {
 	logger.log "SYSTEM" "Начало полной проверки системы..."
