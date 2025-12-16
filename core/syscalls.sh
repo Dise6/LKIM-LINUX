@@ -17,7 +17,7 @@ get_system_map_file() {
 
 collect_syscalls_data() {
 
-		local OUTPUT_FILE="$1"
+	local OUTPUT_FILE="$1"
 	local SYSTEM_MAP_FILE=$(get_system_map_file)
 
 	if [[ -z "$SYSTEM_MAP_FILE" ]]; then

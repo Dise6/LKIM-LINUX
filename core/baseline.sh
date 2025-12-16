@@ -7,7 +7,7 @@ BASELINE_DIR="baseline"
 save_current_baseline() {
 	#1. Проверка существования каталога baseline
 	if [[ ! -d "$BASELINE_DIR" ]]; then
-		mkdir -p "BASELINE_DIR"
+		mkdir -p "$BASELINE_DIR"
 		logger.log "BASELINE_DIR" "Каталог baseline Создан."
 	fi
 
@@ -18,12 +18,12 @@ save_current_baseline() {
 	fi
 
 	if source checks/syscalls.sh 2>/dev/null; then
-		collect_syscalls_data "BASELINE_DIR/syscalls.bl"
+		collect_syscalls_data "$BASELINE_DIR/syscalls.bl"
 	fi
 
 	#Пример вызова модулей ядра(checks/module.sh)
 	if source checks/module.sh 2>/dev/null; then
-		collect_module_data "BASELINE_DIR/modules.bl"
+		collect_module_data "$BASELINE_DIR/modules.bl"
 	else
 		logger.log "ERROR" "Не удалось подключить checks/module.sh"
 	fi
@@ -34,9 +34,9 @@ save_current_baseline() {
 load_baseline_data() {
 	local BASELINE_FILE="$1"
 
-	if [[ -f "BASELINE_FILE" ]]; then
+	if [[ -f "$BASELINE_FILE" ]]; then
 		#Выводит содержимое файла baseline для последующей обработки модулем checks/*
-		cat "BASELINE_FILE"
+		cat "$BASELINE_FILE"
 	else
 		logger.log "ERROR" "Эталонный файл не найден: $BASELINE_FILE"
 		return 1
