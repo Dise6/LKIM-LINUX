@@ -27,6 +27,7 @@ logger.log(){
 		;;
 	"SUCCESS")
 		echo -e "${COLOR_GREEN}$LOG_ENTRY${COLOR_RESET}"
+		;;
 
 	*)
 		echo "$LOG_ENTRY"
