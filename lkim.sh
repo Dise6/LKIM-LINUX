@@ -51,6 +51,11 @@ elif [[ "$1" == "--run-check" ]]; then
 		logger.log "SYSTEM" "ЗАПУЩЕНА ПРОЦЕДУРА ПОЛНОЙ ПРОВЕРКИ СИСТЕМЫ."
 		run_all_checks
 		exit 0 
+elif [[ "$1" == "--stream-network" ]]; then
+		logger.log "SYSTEM" "ЗАПУЩЕН РЕЖИМ ПОТОКОВОЙ ТЕЛЕМЕТРИИ ДЛЯ UI NETWORK_SCAN"
+		source checks/network_monitor.sh
+		run_network_telemetry
+		exit 0
 else
 
 	#Пользовательский интерфейс UI 
@@ -59,6 +64,8 @@ else
 	echo -e "\033[1mИСПОЛЬЗОВАНИЕ:\033[0m"
 	echo -e "\033[032m./lkim.sh --save-baseline\033[0m\t\t# Сохранение текущего состояния системы как эталон"
 	echo -e "\033[33m./lkim.sh --run-check\033[0m\t\t\t# Запуск полной проверки системы (сравнение с эталоном)"
+	echo -e "\033[33m./lkim.sh --stream-network\033[0m\t\t\t# Запуск просмотра сети"
 	echo "--------------------------------------------------------"
 	exit 1
 fi  
+
