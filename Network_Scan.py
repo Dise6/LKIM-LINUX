@@ -47,6 +47,9 @@ class NetworkScanApp(QMainWindow):
         self.setup_ui()
         self.start_pipe_listener()
 
+        self.cycle_minutes = 5  # Настройка пользователя
+        self.start_session_time = time.time()
+
     def setup_ui(self):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -197,6 +200,45 @@ class NetworkScanApp(QMainWindow):
 
         self.data_received.connect(self.handle_new_data)
         threading.Thread(target=listen, daemon=True).start()
+    
+    def update_3d_candles(self):
+        self.ax.clear()
+        self.ax.set_facecolor('#0b0e14')
+        
+        # ПРОВЕРКА ЦИКЛА: сброс каждые N минут
+        elapsed = time.time() - self.start_session_time
+        if elapsed > (self.cycle_minutes * 60):
+            self.history.clear()
+            self.start_session_time = time.time()
+            self.desc_browser.append("<b style='color:#58a6ff;'>[SYSTEM]</b> Цикл завершен. График обнулен.")
+        
+        if not self.history:
+            self.canvas.draw()
+            return
+
+        for i, data in enumerate(self.history):
+            _, tx, rx, score, _ = data
+            tx, rx = float(tx), float(rx)
+            
+            # ВЫЧИСЛЯЕМ ОБЪЕМ (толщину)
+            # Базовая толщина 0.2 + добавка от суммарного трафика
+            thickness = 0.2 + min(0.6, (tx + rx) / 500)
+            
+            # Центрируем свечу, чтобы она росла из середины слота
+            offset = (1.0 - thickness) / 2
+            
+            # 1. НИЖНЯЯ ЧАСТЬ (RX) - Желтая
+            self.ax.bar3d(i + offset, offset, 0, thickness, thickness, rx, 
+                          color='#f1e05a', alpha=0.9, edgecolor='#30363d')
+            
+            # 2. ВЕРХНЯЯ ЧАСТЬ (TX) - Зеленая (ставим поверх RX)
+            self.ax.bar3d(i + offset, offset, rx, thickness, thickness, tx, 
+                          color='#2ea043', alpha=0.9, edgecolor='#30363d')
+
+        # Ограничения осей для стабильности картинки
+        self.ax.set_zlim(0, 500) # Максимальная высота (подбери под свой трафик)
+        self.ax.axis('off')
+        self.canvas.draw()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
