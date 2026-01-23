@@ -83,6 +83,6 @@ run_network_telemetry() {
 			anomaly_score=5 # Максимальный фитиль при взломе
 		fi
 
-		send_telemetry "$tx_curr" "rx_curr" "$anomaly_score" "$alert_mod"
+		send_telemetry "$tx_curr" "$rx_curr" "$anomaly_score" "$alert_mod" "NET_SCAN"
 	done
 } 

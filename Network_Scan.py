@@ -149,10 +149,12 @@ class NetworkScanApp(QMainWindow):
         dx = dy = 0.5  # Фиксированная ширина (теперь они не растянуты!)
         
         for i, data in enumerate(self.history):
-            _, tx, rx, score, alert = data
-            tx, rx, score = float(tx), float(rx), int(score)
-            
-            # Позиция X (время), Y (направление, пусть 0), Z (высота)
+            try:
+                _, tx, rx, score, alert = data
+                tx, rx, score = float(tx), float(rx), int(score)
+            except (ValueError, TypeError):
+                continue
+                # Позиция X (время), Y (направление, пусть 0), Z (высота)
             x_pos = i
             y_pos = 0
             
@@ -203,15 +205,29 @@ class NetworkScanApp(QMainWindow):
     
     def update_3d_candles(self):
         self.ax.clear()
-        self.ax.set_facecolor('#0b0e14')
+        # Темный фон графика
+        self.ax.set_facecolor('#0b0e14') 
         
-        # ПРОВЕРКА ЦИКЛА: сброс каждые N минут
+        # ПРОВЕРКА ЦИКЛА (очистка графика каждые N минут)
         elapsed = time.time() - self.start_session_time
         if elapsed > (self.cycle_minutes * 60):
             self.history.clear()
             self.start_session_time = time.time()
-            self.desc_browser.append("<b style='color:#58a6ff;'>[SYSTEM]</b> Цикл завершен. График обнулен.")
+            self.desc_browser.append("<b style='color:#58a6ff;'>[SYSTEM]</b> Цикл завершен. График сброшен.")
         
+        # --- ОТРИСОВКА КРАСНЫХ ЗОН (ЛИМИТЫ) ---
+        # Создаем плоскости "потолка" и "пола"
+        # X от 0 до 40 (размер буфера), Y от 0 до 1
+        limit_val = 800 # Высота, где начинается красная зона (KB/s)
+        
+        # Сетка для плоскости
+        xx, yy = np.meshgrid(range(41), [0, 1])
+        
+        # Верхняя зона опасности (полупрозрачный красный)
+        self.ax.plot_surface(xx, yy, np.full_like(xx, limit_val), alpha=0.1, color='red')
+        # Нижняя зона опасности
+        self.ax.plot_surface(xx, yy, np.full_like(xx, -limit_val), alpha=0.1, color='red')
+
         if not self.history:
             self.canvas.draw()
             return
@@ -219,25 +235,55 @@ class NetworkScanApp(QMainWindow):
         for i, data in enumerate(self.history):
             _, tx, rx, score, _ = data
             tx, rx = float(tx), float(rx)
+            score = float(score) # 0 - норма, >0 - аномалия
             
-            # ВЫЧИСЛЯЕМ ОБЪЕМ (толщину)
-            # Базовая толщина 0.2 + добавка от суммарного трафика
-            thickness = 0.2 + min(0.6, (tx + rx) / 500)
+            # --- ТЕЛО СВЕЧИ (Основной трафик) ---
+            # RX (Входящий) - ВВЕРХ (Желтый/Золотой)
+            # TX (Исходящий) - ВНИЗ (Зеленый/Матричный)
             
-            # Центрируем свечу, чтобы она росла из середины слота
+            thickness = 0.6 
             offset = (1.0 - thickness) / 2
             
-            # 1. НИЖНЯЯ ЧАСТЬ (RX) - Желтая
+            # RX Bar (Positive Z)
             self.ax.bar3d(i + offset, offset, 0, thickness, thickness, rx, 
-                          color='#f1e05a', alpha=0.9, edgecolor='#30363d')
+                          color='#ffd700', alpha=0.9, shade=True, edgecolor='#1a1f26')
             
-            # 2. ВЕРХНЯЯ ЧАСТЬ (TX) - Зеленая (ставим поверх RX)
-            self.ax.bar3d(i + offset, offset, rx, thickness, thickness, tx, 
-                          color='#2ea043', alpha=0.9, edgecolor='#30363d')
+            # TX Bar (Negative Z)
+            self.ax.bar3d(i + offset, offset, 0, thickness, thickness, -tx, 
+                          color='#00ff41', alpha=0.9, shade=True, edgecolor='#1a1f26')
 
-        # Ограничения осей для стабильности картинки
-        self.ax.set_zlim(0, 500) # Максимальная высота (подбери под свой трафик)
+            # --- ФИТИЛИ АНОМАЛИЙ (The Wicks) ---
+            # Рисуем только если есть score (аномалия)
+            if score > 0:
+                wick_thickness = 0.1
+                wick_offset = (1.0 - wick_thickness) / 2
+                
+                # Длина фитиля зависит от score. 
+                # Если score=1, фитиль добавляет 50% длины.
+                wick_len_rx = rx * 0.5 * score + 100 # +100 чтобы было видно даже на мелком трафике
+                wick_len_tx = tx * 0.5 * score + 100
+                
+                # RX Wick (Торчит вверх из тела свечи)
+                self.ax.bar3d(i + wick_offset, wick_offset, rx, 
+                              wick_thickness, wick_thickness, wick_len_rx,
+                              color='#ff0000', alpha=1.0) # Ярко-красный
+                
+                # TX Wick (Торчит вниз из тела свечи)
+                self.ax.bar3d(i + wick_offset, wick_offset, -tx, 
+                              wick_thickness, wick_thickness, -wick_len_tx,
+                              color='#ff0000', alpha=1.0)
+
+        # Настройка камеры и осей
+        self.ax.set_zlim(-1200, 1200) # Лимиты оси Z
+        self.ax.set_ylim(0, 1)
+        self.ax.set_xlim(0, 40)
+        
+        # Убираем оси для чистого UI
         self.ax.axis('off')
+        
+        # Можно добавить подписи осей вручную через text, если нужно
+        # self.ax.text2D(0.05, 0.95, "TRAFFIC MONITOR", transform=self.ax.transAxes, color="white")
+
         self.canvas.draw()
 
 if __name__ == '__main__':
