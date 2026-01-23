@@ -154,17 +154,41 @@ class NetworkScanApp(QMainWindow):
                 tx, rx, score = float(tx), float(rx), int(score)
             except (ValueError, TypeError):
                 continue
-                # Позиция X (время), Y (направление, пусть 0), Z (высота)
-            x_pos = i
-            y_pos = 0
+        # Настройка геометрии свечи
+        width = 0.5  # Ширина по оси X
+        depth = 0.5  # Глубина по оси Y (вот это дает объем!)
             
-            color_tx = '#2ea043' if score > 80 else '#da3633'
-            color_rx = '#0366d6' if score > 80 else '#da3633'
+         # Центрируем свечу по оси Y (чтобы она стояла посередине "дорожки")
+        y_pos = (1.0 - depth) / 2
+        x_pos = i + (1.0 - width) / 2
 
-            # Рисуем "тело" свечи TX (вверх)
-            self.ax.bar3d(x_pos, y_pos, 0, dx, dy, tx, color=color_tx, alpha=0.8)
-            # Рисуем "тело" свечи RX (вниз зеркально)
-            self.ax.bar3d(x_pos, y_pos, 0, dx, dy, -rx, color=color_rx, alpha=0.6)
+        # --- ТЕЛО СВЕЧИ (3D ПАРАЛЛЕЛЕПИПЕД) ---
+            
+        # RX (Входящий) - Желтый столб вверх
+        # bar3d(x, y, z, dx, dy, dz)
+        if rx > 0:
+            self.ax.bar3d(x_pos, y_pos, 0, width, depth, rx, 
+                 color='#ffd700', alpha=0.8, shade=True, edgecolor='#1a1f26')
+            
+        # TX (Исходящий) - Зеленый столб вниз
+        if tx > 0:
+            self.ax.bar3d(x_pos, y_pos, 0, width, depth, -tx, 
+                color='#00ff41', alpha=0.8, shade=True, edgecolor='#1a1f26')
+
+        # --- ФИТИЛИ АНОМАЛИЙ (Тонкие 3D колонны) ---
+        if score > 0:
+            wick_w = 0.1 # Очень тонкий
+            wick_y = (1.0 - wick_w) / 2
+            wick_x = i + (1.0 - wick_w) / 2
+                
+            # Фитиль RX (Красный лазер вверх)
+            wick_len = rx * 0.8 + 200 # Длина зависит от силы аномалии
+            self.ax.bar3d(wick_x, wick_y, rx, wick_w, wick_w, wick_len, 
+                              color='red', alpha=1.0, shade=False)
+                
+            # Фитиль TX (Красный лазер вниз)
+            self.ax.bar3d(wick_x, wick_y, -tx, wick_w, wick_w, -(tx * 0.8 + 200), 
+                            color='red', alpha=1.0, shade=False)
 
         self.ax.set_zlim(-100, 100)
         self.ax.axis('off') # Для футуристичного вида
