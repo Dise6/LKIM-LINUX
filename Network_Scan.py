@@ -155,8 +155,8 @@ class NetworkScanApp(QMainWindow):
             except (ValueError, TypeError):
                 continue
         # Настройка геометрии свечи
-        width = 0.5  # Ширина по оси X
-        depth = 0.5  # Глубина по оси Y (вот это дает объем!)
+        width = 0.7  # Ширина по оси X
+        depth = 0.7  # Глубина по оси Y (вот это дает объем!)
             
          # Центрируем свечу по оси Y (чтобы она стояла посередине "дорожки")
         y_pos = (1.0 - depth) / 2
@@ -168,16 +168,16 @@ class NetworkScanApp(QMainWindow):
         # bar3d(x, y, z, dx, dy, dz)
         if rx > 0:
             self.ax.bar3d(x_pos, y_pos, 0, width, depth, rx, 
-                 color='#ffd700', alpha=0.8, shade=True, edgecolor='#1a1f26')
+                 color='#ffd700', alpha=0.9, shade=True, edgecolor='#1a1f26')
             
         # TX (Исходящий) - Зеленый столб вниз
         if tx > 0:
             self.ax.bar3d(x_pos, y_pos, 0, width, depth, -tx, 
-                color='#00ff41', alpha=0.8, shade=True, edgecolor='#1a1f26')
+                color='#00ff41', alpha=0.9, shade=True, edgecolor='#1a1f26')
 
         # --- ФИТИЛИ АНОМАЛИЙ (Тонкие 3D колонны) ---
         if score > 0:
-            wick_w = 0.1 # Очень тонкий
+            wick_w = 0.15 # Очень тонкий
             wick_y = (1.0 - wick_w) / 2
             wick_x = i + (1.0 - wick_w) / 2
                 
@@ -189,7 +189,7 @@ class NetworkScanApp(QMainWindow):
             # Фитиль TX (Красный лазер вниз)
             self.ax.bar3d(wick_x, wick_y, -tx, wick_w, wick_w, -(tx * 0.8 + 200), 
                             color='red', alpha=1.0, shade=False)
-
+        self.ax.view_init(elev=20, azim=-35)
         self.ax.set_zlim(-100, 100)
         self.ax.axis('off') # Для футуристичного вида
         self.canvas.draw()
