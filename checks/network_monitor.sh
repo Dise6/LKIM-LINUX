@@ -133,9 +133,18 @@ run_network_telemetry() {
 # Сбор реальных внешних хостов (удаленные IP)
 get_network_hosts() {
     local hosts_data=""
-    # Собираем уникальные удаленные IP, исключая 0.0.0.0 (нули в hex)
-    local raw_hosts=$(awk 'NR>1 && $3 !~ /^00000000/ {print $3}' /proc/net/tcp | cut -d':' -f1 | sort -u | head -n 10)
     
+    # Ищем ESTABLISHED соединения (статус 01) в TCP
+    # Используем FNR>1 чтобы пропустить заголовки файлов
+    local tcp_hosts=$(awk 'FNR>1 && $4=="01" && $3!~/^00000000/ {print $3}' /proc/net/tcp 2>/dev/null | cut -d':' -f1)
+    
+    # Ищем активные UDP соединения (QUIC/HTTP3 браузеров)
+    local udp_hosts=$(awk 'FNR>1 && $3!~/^00000000/ {print $3}' /proc/net/udp 2>/dev/null | cut -d':' -f1)
+
+    # Объединяем, убираем пустые строки, сортируем и оставляем уникальные
+    local raw_hosts=$(echo -e "${tcp_hosts}\n${udp_hosts}" | grep -v '^$' | sort -u | head -n 10)
+
+    # Если вообще ничего нет
     if [[ -z "$raw_hosts" ]]; then
         echo "NO_REMOTE:NONE:#8b949e"
         return
@@ -143,10 +152,18 @@ get_network_hosts() {
 
     for hex_ip in $raw_hosts; do
         local ip=$(hex_to_ip $hex_ip)
-        # Если это не локальный адрес, выводим
-        if [[ "$ip" != "127.0.0.1" ]]; then
+        # Строго исключаем локалхост и нули
+        if [[ "$ip" != "127.0.0.1" && "$ip" != "0.0.0.0" ]]; then
+            # Для разнообразия можно подсвечивать цветом: 
+            # #58a6ff (синий) для обычных, но оставим пока единообразно
             hosts_data+="${ip}:ESTABLISHED:#58a6ff,"
         fi
     done
-    echo "${hosts_data%,}"
+
+    # КРИТИЧЕСКАЯ ПРОВЕРКА: Если после отсеивания локалхоста строка осталась пустой
+    if [[ -z "$hosts_data" ]]; then
+         echo "NO_REMOTE:NONE:#8b949e"
+    else
+         echo "${hosts_data%,}" # Отправляем, отрезав последнюю запятую
+    fi
 }
