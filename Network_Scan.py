@@ -94,6 +94,8 @@ class NetworkScanApp(QMainWindow):
         right_panel.setLayout(right_layout)
         splitter_main.addWidget(right_panel)
 
+        self.load_inspector_guide()
+
         splitter_main.setStretchFactor(1, 4) # График шире всех
         main_vbox.addWidget(splitter_main, stretch=5)
 
@@ -119,6 +121,26 @@ class NetworkScanApp(QMainWindow):
 
         bottom_splitter.setStretchFactor(1, 3)
         main_vbox.addWidget(bottom_splitter, stretch=2)
+
+    def load_inspector_guide(self):
+        """Загружает Markdown документацию в окно Threat Inspector"""
+        # Определяем абсолютный путь к файлу inspector.md
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        doc_path = os.path.join(base_dir, "inspec", "inspector.md")
+        
+        if os.path.exists(doc_path):
+            try:
+                with open(doc_path, "r", encoding="utf-8") as f:
+                    md_content = f.read()
+                    # Нативный парсер Markdown в PyQt5
+                    self.ins_browser.setMarkdown(md_content)
+            except Exception as e:
+                self.ins_browser.setHtml(f"<h3 style='color:#da3633;'>[ERROR] Ошибка чтения inspector.md: {e}</h3>")
+        else:
+            self.ins_browser.setHtml(
+                "<h3 style='color:#da3633;'>[SYSTEM ALERT] Файл inspec/inspector.md не найден.</h3>"
+                "<p>Создайте директорию 'inspec' и файл 'inspector.md' для загрузки инструкций.</p>"
+            )
 
     def populate_mock_nodes(self):
         nodes = [
