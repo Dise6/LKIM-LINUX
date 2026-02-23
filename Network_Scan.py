@@ -174,7 +174,7 @@ class NetworkScanApp(QMainWindow):
         
         formatted_msg = f"<span style='color:{color};'>{message}</span>"
         # Вызываем через метод append (PyQt сам обработает это безопасно)
-        self.log_browser.append(formatted_msg)
+        # self.log_browser.append(formatted_msg)
         self.log_browser.ensureCursorVisible()
 
     def populate_mock_nodes(self):
