@@ -102,7 +102,7 @@ class NetworkScanApp(QMainWindow):
         # --- НИЖНЯЯ ПАНЕЛЬ (Description & Status) ---
         bottom_splitter = QSplitter(Qt.Horizontal)
 
-        # Слева-снизу: Текущая активность
+        # Слева-снизу: Action Monitor
         self.activity_panel = QGroupBox("Action Monitor")
         act_layout = QVBoxLayout()
         self.act_label = QLabel("IDLE: Waiting for data...")
@@ -110,6 +110,7 @@ class NetworkScanApp(QMainWindow):
         act_layout.addWidget(self.act_label)
         self.activity_panel.setLayout(act_layout)
         bottom_splitter.addWidget(self.activity_panel)
+        self.start_log_listener()
 
         # Справа-снизу: Детальное описание
         self.desc_panel = QGroupBox("Detailed System Event Log")
@@ -141,6 +142,40 @@ class NetworkScanApp(QMainWindow):
                 "<h3 style='color:#da3633;'>[SYSTEM ALERT] Файл inspec/inspector.md не найден.</h3>"
                 "<p>Создайте директорию 'inspec' и файл 'inspector.md' для загрузки инструкций.</p>"
             )
+
+    def start_log_listener(self):
+        """Запускает поток для чтения lkim.log в реальном времени"""
+        def follow_log():
+            log_path = "logs/lkim.log"
+            # Создаем файл, если его нет, чтобы не было ошибки
+            if not os.path.exists("logs"): os.makedirs("logs")
+            if not os.path.exists(log_path): open(log_path, 'a').close()
+
+            with open(log_path, "r") as f:
+                # Переходим в конец файла
+                f.seek(0, 2)
+                while True:
+                    line = f.readline()
+                    if not line:
+                        time.sleep(0.5) # Ждем новую строку
+                        continue
+                    
+                    # Отправляем строку в UI через сигнал или напрямую (безопасно для потока)
+                    self.update_action_monitor(line.strip())
+
+        threading.Thread(target=follow_log, daemon=True).start()
+
+    def update_action_monitor(self, message):
+        """Красиво форматирует и выводит строку лога"""
+        color = "#8b949e" # По умолчанию серый
+        if "ERROR" in message or "ALERT" in message: color = "#da3633" # Красный
+        elif "SUCCESS" in message: color = "#3fb950" # Зеленый
+        elif "NETWORK" in message: color = "#58a6ff" # Синий
+        
+        formatted_msg = f"<span style='color:{color};'>{message}</span>"
+        # Вызываем через метод append (PyQt сам обработает это безопасно)
+        self.log_browser.append(formatted_msg)
+        self.log_browser.ensureCursorVisible()
 
     def populate_mock_nodes(self):
         nodes = [

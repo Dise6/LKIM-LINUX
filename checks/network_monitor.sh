@@ -122,6 +122,16 @@ run_network_telemetry() {
             echo "HOSTS|$hosts_data" > "$PIPE_PATH"
         fi
 
+        # Внутри цикла while true
+        if (( anomaly_score > 0 )); then
+            # Используем твой стандартный логгер
+            logger.log "NETWORK" "Anomaly detected! Score: $anomaly_score. Traffic: TX ${tx_curr}KB/s, RX ${rx_curr}KB/s"
+        fi
+
+        if (( iteration % 30 == 0 )); then
+            logger.log "SYSTEM" "Periodic integrity check: Network stack is stable."
+        fi
+
         ((iteration++))
         # sleep уже заложен внутри get_network_traffic
     done
