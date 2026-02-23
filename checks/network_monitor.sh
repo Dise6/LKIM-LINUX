@@ -116,6 +116,16 @@ run_network_telemetry() {
             echo "PORTS|$ports" > "$PIPE_PATH"
         fi
 
+        # --- ФЛАГ 3: ХОСТЫ ---
+        if (( iteration % 10 == 0 )); then
+            # Добавляем проверку: если данных нет, шлем заглушку, чтобы Python не упал
+            local hosts_data="127.0.0.1:LOCAL:#8b949e,GATEWAY:SECURE:#3fb950" 
+
+            [[ -z "$hosts_data" ]] && hosts_data=$(get_network_hosts)
+            
+            echo "HOSTS|$hosts_data" > "$PIPE_PATH"
+        fi
+
         ((iteration++))
         # sleep уже заложен внутри get_network_traffic
     done
