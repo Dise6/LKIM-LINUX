@@ -196,16 +196,24 @@ class NetworkScanApp(QMainWindow):
 
     def handle_new_data(self, raw_line):
         try:
+            if not raw_line or "|" not in raw_line:
+                return #Игнорируем если пустые или битые строки
+
             parts = raw_line.split("|")
             tag = parts[0]
             data = parts[1:]
 
             if tag == "GRAPH":
-                # Передаем в твою существующую логику 3D графика
+                if len(data) < 5:
+                    return
                 # data = [ts, tx, rx, score, alert]
                 self.history.append(data)
                 ts, tx, rx, score, alert = data
                 
+                score = float(score)
+                tx = float(tx)
+                rx = float(rx) 
+
                 self.act_label.setText(f"PROCESSING PKT: {ts}")
                 self.desc_browser.append(f"[{ts}] Traffic: IN={rx}KB, OUT={tx}KB | Integrity={score}")
                 
@@ -227,7 +235,7 @@ class NetworkScanApp(QMainWindow):
                     self.nodes_list.addItem(item)
 
         except Exception as e:
-            print(f"Parsing error: {e}")
+            print(f"Parsing error: {e} in line: {raw_line}")
 
     def start_pipe_listener(self):
         def listen():

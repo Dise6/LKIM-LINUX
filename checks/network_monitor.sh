@@ -61,13 +61,44 @@ run_network_telemetry() {
     local iteration=0
 
     while true; do
+        local anomaly_score=0
+        local alert_mod="NONE"   
         # --- ФЛАГ 1: ГРАФИК (Каждую секунду) ---
         read tx_curr rx_curr < <(get_network_traffic)
-        
-        # Твоя логика расчета anomaly_score и alert_mod остается прежней
-        local anomaly_score=0 
-        local alert_mod="NONE"
-        
+
+        # обновление истории и расчет среднего (basaline)
+        rx_history+=($rx_curr)
+		tx_history+=($tx_curr)
+
+        # Ограничение размера истории
+		if [[ ${#rx_history[@]} -gt $HISTORY_SIZE ]]; then
+			rx_history=("${rx_history[@]:1}")
+			tx_history=("${tx_history[@]:1}")
+		fi
+
+        rx_avg=$(calculate_average "${rx_history[@]}")
+		tx_avg=$(calculate_average "${tx_history[@]}")
+
+        # Расчет коэффициента аномалии (SCORE)
+		# Score будет множителем: 0 = норма, 1.0 = превышение в 2 раза,2.0 = в 3 раза и т.д
+		# это определяет длину фитиля 
+
+		# зашита от деления на 0 
+		[[ $rx_avg -eq 0 ]] && rx_avg=1
+		[[ $tx_avg -eq 0 ]] && tx_avg=1
+
+        # Вычисляем превышение (heuristic logic)
+		# Если текущие значение > среднего * порог, то score растет
+	
+		if (( tx_curr > tx_avg * ANOMALY_THRESHOLD )) || (( rx_curr > rx_avg * ANOMALY_THRESHOLD )); then
+			# Простая формула для демонстрации 
+			anomaly_score=1
+		fi 
+
+		if grep -q "ALERT" "logs/lkim.log"; then
+			alert_mod="SYSTEM_COMPROMISED"
+			anomaly_score=5 # Максимальный фитиль при взломе
+		fi
         # Отправляем данные графика с тегом GRAPH
         # Формат: GRAPH|timestamp|tx|rx|score|alert
         echo "GRAPH|$(date +%H:%M:%S)|$tx_curr|$rx_curr|$anomaly_score|$alert_mod" > "$PIPE_PATH"
