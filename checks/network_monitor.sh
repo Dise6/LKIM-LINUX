@@ -39,10 +39,10 @@ get_network_traffic() {
 	echo "$tx_speed $rx_speed"
 }
 
-# Функция для конвертации HEX IP из /proc/net/tcp в обычный вид (0100007F -> 127.0.0.1)
+# Функция для конвертации HEX IP 
 hex_to_ip() {
     local hex=$1
-    if [[ -z "$hex" ]]; then echo "0.0.0.0"; return; fi
+    if [[ ${#hex} -ne 8 ]]; then echo "$hex"; return; fi
     printf "%d.%d.%d.%d" $((16#${hex:6:2})) $((16#${hex:4:2})) $((16#${hex:2:2})) $((16#${hex:0:2}))
 }
 
@@ -134,36 +134,31 @@ run_network_telemetry() {
 get_network_hosts() {
     local hosts_data=""
     
-    # Ищем ESTABLISHED соединения (статус 01) в TCP
-    # Используем FNR>1 чтобы пропустить заголовки файлов
-    local tcp_hosts=$(awk 'FNR>1 && $4=="01" && $3!~/^00000000/ {print $3}' /proc/net/tcp 2>/dev/null | cut -d':' -f1)
-    
-    # Ищем активные UDP соединения (QUIC/HTTP3 браузеров)
-    local udp_hosts=$(awk 'FNR>1 && $3!~/^00000000/ {print $3}' /proc/net/udp 2>/dev/null | cut -d':' -f1)
+    # Сбор из всех источников: TCP, TCP6, UDP, UDP6
+    # 1. Берем колонку 3 (Remote Address)
+    # 2. Убираем локальные адреса (00000000 и 0100007F)
+    # 3. Оставляем только уникальные
+    local raw_hosts=$(awk 'NR>1 {print $3}' /proc/net/{tcp,udp,tcp6,udp6} 2>/dev/null | \
+                      cut -d':' -f1 | \
+                      grep -vE "00000000|0100007F" | \
+                      sort -u | head -n 12)
 
-    # Объединяем, убираем пустые строки, сортируем и оставляем уникальные
-    local raw_hosts=$(echo -e "${tcp_hosts}\n${udp_hosts}" | grep -v '^$' | sort -u | head -n 10)
-
-    # Если вообще ничего нет
     if [[ -z "$raw_hosts" ]]; then
-        echo "NO_REMOTE:NONE:#8b949e"
+        echo "NO_REMOTE:IDLE:#8b949e"
         return
     fi
 
     for hex_ip in $raw_hosts; do
-        local ip=$(hex_to_ip $hex_ip)
-        # Строго исключаем локалхост и нули
-        if [[ "$ip" != "127.0.0.1" && "$ip" != "0.0.0.0" ]]; then
-            # Для разнообразия можно подсвечивать цветом: 
-            # #58a6ff (синий) для обычных, но оставим пока единообразно
-            hosts_data+="${ip}:ESTABLISHED:#58a6ff,"
+        local ip
+        # Если это короткий HEX (IPv4) - конвертируем, если длинный (IPv6) - берем как есть
+        if [[ ${#hex_ip} -eq 8 ]]; then
+            ip=$(hex_to_ip $hex_ip)
+        else
+            ip="IPv6_ADDR" # Для простоты UI, так как полные IPv6 слишком длинные
         fi
+        
+        hosts_data+="${ip}:ESTABLISHED:#58a6ff,"
     done
 
-    # КРИТИЧЕСКАЯ ПРОВЕРКА: Если после отсеивания локалхоста строка осталась пустой
-    if [[ -z "$hosts_data" ]]; then
-         echo "NO_REMOTE:NONE:#8b949e"
-    else
-         echo "${hosts_data%,}" # Отправляем, отрезав последнюю запятую
-    fi
+    echo "${hosts_data%,}"
 }
