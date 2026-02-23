@@ -33,7 +33,7 @@ QTextBrowser { background-color: #010409; border: none; color: #c9d1d9; font-siz
 """
 
 class NetworkScanApp(QMainWindow):
-    data_received = pyqtSignal(list)
+    data_received = pyqtSignal(str)
 
     def __init__(self):
         super().__init__()
@@ -194,33 +194,51 @@ class NetworkScanApp(QMainWindow):
         self.ax.axis('off') # Для футуристичного вида
         self.canvas.draw()
 
-    def handle_new_data(self, data):
-        self.history.append(data)
-        ts, tx, rx, score, alert = data
-        
-        self.act_label.setText(f"PROCESSING PKT: {ts}")
-        self.desc_browser.append(f"[{time.strftime('%H:%M:%S')}] Traffic: IN={rx}KB, OUT={tx}KB | Integrity={score}%")
-        
-        if alert != "NONE":
-            self.ins_browser.setHtml(f"<h3 style='color:#da3633;'>ANOMALY: {alert}</h3>"
-                                     f"<p>Критическое изменение в структурах ядра!</p>")
-            self.desc_browser.append(f"<b style='color:#da3633;'>[ALERT]</b> Обнаружена аномалия {alert}")
+    def handle_new_data(self, raw_line):
+        try:
+            parts = raw_line.split("|")
+            tag = parts[0]
+            data = parts[1:]
 
-        self.update_3d_candles()
+            if tag == "GRAPH":
+                # Передаем в твою существующую логику 3D графика
+                # data = [ts, tx, rx, score, alert]
+                self.history.append(data)
+                ts, tx, rx, score, alert = data
+                
+                self.act_label.setText(f"PROCESSING PKT: {ts}")
+                self.desc_browser.append(f"[{ts}] Traffic: IN={rx}KB, OUT={tx}KB | Integrity={score}")
+                
+                if alert != "NONE":
+                    self.ins_browser.setHtml(f"<h3 style='color:#da3633;'>ANOMALY: {alert}</h3>")
+                
+                self.update_3d_candles()
+
+            elif tag == "PORTS" or tag == "HOSTS":
+                # Обновляем левую панель (Index A)
+                self.nodes_list.clear()
+                # data[0] это строка вида "80:ACTIVE:#3fb950,666:SUSPICIOUS:#f85149"
+                nodes = data[0].split(",")
+                for n in nodes:
+                    if not n: continue
+                    name, status, color = n.split(":")
+                    item = QListWidgetItem(f"● {name} [{status}]")
+                    item.setForeground(QColor(color))
+                    self.nodes_list.addItem(item)
+
+        except Exception as e:
+            print(f"Parsing error: {e}")
 
     def start_pipe_listener(self):
         def listen():
             while True:
                 if os.path.exists(PIPE_PATH):
                     try:
+                        # Читаем FIFO как текстовый поток
                         with open(PIPE_PATH, "r") as fifo:
-                            while True:
-                                line = fifo.readline()
-                                if line:
-                                    parts = line.strip().split("\t")
-                                    if len(parts) == 5:
-                                        self.data_received.emit(parts)
-                                else: break
+                            for line in fifo:
+                                if line.strip():
+                                    self.data_received.emit(line.strip())
                     except: pass
                 time.sleep(0.1)
 
