@@ -223,16 +223,25 @@ class NetworkScanApp(QMainWindow):
                 self.update_3d_candles()
 
             elif tag == "PORTS" or tag == "HOSTS":
-                # Обновляем левую панель (Index A)
-                self.nodes_list.clear()
-                # data[0] это строка вида "80:ACTIVE:#3fb950,666:SUSPICIOUS:#f85149"
-                nodes = data[0].split(",")
-                for n in nodes:
-                    if not n: continue
-                    name, status, color = n.split(":")
-                    item = QListWidgetItem(f"● {name} [{status}]")
-                    item.setForeground(QColor(color))
-                    self.nodes_list.addItem(item)
+                # Чтобы видеть и то, и другое, мы не будем очищать список полностью,
+                # а будем обновлять его секционно или просто добавлять заголовок
+                if tag == "PORTS":
+                    self.nodes_list.clear() # Очищаем только в начале цикла
+                    self.nodes_list.addItem(QListWidgetItem("--- ACTIVE PORTS ---"))
+                else:
+                    self.nodes_list.addItem(QListWidgetItem("--- REMOTE HOSTS ---"))
+
+                if not data or data[0] == "": return
+                
+                elements = data[0].split(",")
+                for el in elements:
+                    try:
+                        # rsplit(":", 2) отрезает только статус и цвет с конца
+                        name, status, color = el.rsplit(":", 2)
+                        item = QListWidgetItem(f" {name} [{status}]")
+                        item.setForeground(QColor(color))
+                        self.nodes_list.addItem(item)
+                    except: continue
 
         except Exception as e:
             print(f"Parsing error: {e} in line: {raw_line}")

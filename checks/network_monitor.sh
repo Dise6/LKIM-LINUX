@@ -39,20 +39,27 @@ get_network_traffic() {
 	echo "$tx_speed $rx_speed"
 }
 
+# Функция для конвертации HEX IP из /proc/net/tcp в обычный вид (0100007F -> 127.0.0.1)
+hex_to_ip() {
+    local hex=$1
+    if [[ -z "$hex" ]]; then echo "0.0.0.0"; return; fi
+    printf "%d.%d.%d.%d" $((16#${hex:6:2})) $((16#${hex:4:2})) $((16#${hex:2:2})) $((16#${hex:0:2}))
+}
+
 get_active_ports_stealth() {
-    # Читаем /proc/net/tcp (01=ESTABLISHED, 0A=LISTEN)
     local ports_data=""
-    while read -r line; do
-        # Извлекаем HEX порт и переводим в DEC
-        local hex_port=$(echo "$line" | awk '{print $2}' | cut -d':' -f2)
-        [[ -z "$hex_port" ]] && continue
+    # Собираем уникальные локальные порты 
+    local raw_ports=$(awk 'NR>1 {print $2}' /proc/net/tcp | cut -d':' -f2 | sort -u | head -n 15)
+    
+    for hex_port in $raw_ports; do
         local dec_port=$((16#$hex_port))
-        
-        # Формируем строку PORT:STATUS:COLOR
-        # В реальной версии здесь будет сверка с baseline
-        ports_data+="${dec_port}:ACTIVE:#3fb950,"
-    done < <(awk 'NR>1' /proc/net/tcp | head -n 10) # Берем первые 10 для чистоты UI
-    echo "${ports_data%,}" # Убираем последнюю запятую
+        # Статус: если есть в списке, значит активен. 
+        # Цвет: зеленый для стандартных, желтый для высоких портов
+        local color="#3fb950"
+        [[ $dec_port -gt 1024 ]] && color="#d29922"
+        ports_data+="${dec_port}:LISTEN:${color},"
+    done
+    echo "${ports_data%,}"
 }
  
 run_network_telemetry() {
@@ -109,13 +116,27 @@ run_network_telemetry() {
             echo "PORTS|$ports" > "$PIPE_PATH"
         fi
 
-        # --- ФЛАГ 3: ХОСТЫ (Допустим, каждые 10 секунд для стабильности) ---
-        if (( iteration % 10 == 0 )); then
-            # Пример статической отправки, можно заменить на динамику
-            echo "HOSTS|192.168.1.1:SECURE:#3fb950,UNKNOWN:666:SUSPICIOUS:#f85149" > "$PIPE_PATH"
-        fi
-
         ((iteration++))
         # sleep уже заложен внутри get_network_traffic
     done
+}
+# Сбор реальных внешних хостов (удаленные IP)
+get_network_hosts() {
+    local hosts_data=""
+    # Собираем уникальные удаленные IP, исключая 0.0.0.0 (нули в hex)
+    local raw_hosts=$(awk 'NR>1 && $3 !~ /^00000000/ {print $3}' /proc/net/tcp | cut -d':' -f1 | sort -u | head -n 10)
+    
+    if [[ -z "$raw_hosts" ]]; then
+        echo "NO_REMOTE:NONE:#8b949e"
+        return
+    fi
+
+    for hex_ip in $raw_hosts; do
+        local ip=$(hex_to_ip $hex_ip)
+        # Если это не локальный адрес, выводим
+        if [[ "$ip" != "127.0.0.1" ]]; then
+            hosts_data+="${ip}:ESTABLISHED:#58a6ff,"
+        fi
+    done
+    echo "${hosts_data%,}"
 }
