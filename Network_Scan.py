@@ -105,11 +105,27 @@ class NetworkScanApp(QMainWindow):
         # Слева-снизу: Action Monitor
         self.activity_panel = QGroupBox("Action Monitor")
         act_layout = QVBoxLayout()
-        self.act_label = QLabel("IDLE: Waiting for data...")
-        self.act_label.setStyleSheet("color: #8b949e; font-style: italic;")
-        act_layout.addWidget(self.act_label)
+        
+        # Заменяем QLabel на QTextBrowser, чтобы можно было выводить много строк
+        self.log_browser = QTextBrowser()
+        self.log_browser.setStyleSheet("""
+            QTextBrowser { 
+                background-color: #0d1117; 
+                border: none; 
+                color: #00ff41; 
+                font-family: 'Consolas', monospace; 
+                font-size: 11px;
+            }
+        """)
+        # Убираем рамки, чтобы вписалось в стиль
+        self.log_browser.setFrameStyle(QFrame.NoFrame)
+        
+        act_layout.addWidget(self.log_browser)
         self.activity_panel.setLayout(act_layout)
+        
         bottom_splitter.addWidget(self.activity_panel)
+        
+        # Теперь запускаем слушатель логов
         self.start_log_listener()
 
         # Справа-снизу: Детальное описание
@@ -144,37 +160,49 @@ class NetworkScanApp(QMainWindow):
             )
 
     def start_log_listener(self):
-        """Запускает поток для чтения lkim.log в реальном времени"""
+        """Запускает поток для чтения lkim.log в реальном времени (аналог tail -f)"""
         def follow_log():
-            log_path = "logs/lkim.log"
-            # Создаем файл, если его нет, чтобы не было ошибки
-            if not os.path.exists("logs"): os.makedirs("logs")
-            if not os.path.exists(log_path): open(log_path, 'a').close()
-
-            with open(log_path, "r") as f:
-                # Переходим в конец файла
+            # Путь к твоему лог-файлу (проверь, чтобы папка logs существовала)
+            log_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs/lkim.log")
+            
+            # Ждем появления файла, если его еще нет
+            while not os.path.exists(log_path):
+                time.sleep(1)
+            
+            with open(log_path, "r", encoding="utf-8") as f:
+                # Переходим в конец файла, чтобы не читать старые гигабайты логов
                 f.seek(0, 2)
                 while True:
                     line = f.readline()
                     if not line:
-                        time.sleep(0.5) # Ждем новую строку
+                        time.sleep(0.5) # Пауза, чтобы не грузить CPU
                         continue
                     
-                    # Отправляем строку в UI через сигнал или напрямую (безопасно для потока)
+                    # Передаем строку в метод обновления UI
+                    # Используем QTimer.singleShot или встроенную потокобезопасность append
                     self.update_action_monitor(line.strip())
 
         threading.Thread(target=follow_log, daemon=True).start()
 
     def update_action_monitor(self, message):
-        """Красиво форматирует и выводит строку лога"""
-        color = "#8b949e" # По умолчанию серый
-        if "ERROR" in message or "ALERT" in message: color = "#da3633" # Красный
-        elif "SUCCESS" in message: color = "#3fb950" # Зеленый
-        elif "NETWORK" in message: color = "#58a6ff" # Синий
+        """Форматирует лог и выводит его в Action Monitor"""
+        timestamp = time.strftime("%H:%M:%S")
+        color = "#00ff41" # Стандартный зеленый
         
-        formatted_msg = f"<span style='color:{color};'>{message}</span>"
-        # Вызываем через метод append (PyQt сам обработает это безопасно)
-        # self.log_browser.append(formatted_msg)
+        # Интеллектуальная подсветка в зависимости от содержания
+        if "ERROR" in message or "ALERT" in message:
+            color = "#da3633" # Критический красный
+        elif "WARNING" in message:
+            color = "#d29922" # Тревожный желтый
+        elif "SUCCESS" in message:
+            color = "#3fb950" # Успешный зеленый
+        elif "NETWORK" in message:
+            color = "#58a6ff" # Информационный синий
+
+        formatted_msg = f"<span style='color:#8b949e;'>[{timestamp}]</span> <span style='color:{color};'>{message}</span>"
+        self.log_browser.append(formatted_msg)
+        
+        # Авто-скролл вниз
         self.log_browser.ensureCursorVisible()
 
     def populate_mock_nodes(self):
