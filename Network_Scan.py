@@ -106,7 +106,7 @@ class NetworkScanApp(QMainWindow):
         self.activity_panel = QGroupBox("Action Monitor")
         act_layout = QVBoxLayout()
         
-        # Заменяем QLabel на QTextBrowser, чтобы можно было выводить много строк
+        # Создаем браузер логов
         self.log_browser = QTextBrowser()
         self.log_browser.setStyleSheet("""
             QTextBrowser { 
@@ -117,15 +117,14 @@ class NetworkScanApp(QMainWindow):
                 font-size: 11px;
             }
         """)
-        # Убираем рамки, чтобы вписалось в стиль
         self.log_browser.setFrameStyle(QFrame.NoFrame)
-        
         act_layout.addWidget(self.log_browser)
         self.activity_panel.setLayout(act_layout)
         
+        # Добавляем в сплиттер
         bottom_splitter.addWidget(self.activity_panel)
         
-        # Теперь запускаем слушатель логов
+        # Запускаем поток чтения логов
         self.start_log_listener()
 
         # Справа-снизу: Детальное описание
