@@ -106,7 +106,12 @@ class NetworkScanApp(QMainWindow):
         self.activity_panel = QGroupBox("Action Monitor")
         act_layout = QVBoxLayout()
         
-        # Создаем браузер логов
+        # МАЛЕНЬКИЙ ИНДИКАТОР СТАТУСА (возвращаем, чтобы код не падал)
+        self.status_label = QLabel("SYSTEM READY")
+        self.status_label.setStyleSheet("color: #8b949e; font-size: 10px; font-weight: bold;")
+        act_layout.addWidget(self.status_label)
+
+        # ОСНОВНОЙ ЛОГ-БРАУЗЕР
         self.log_browser = QTextBrowser()
         self.log_browser.setStyleSheet("""
             QTextBrowser { 
@@ -119,12 +124,11 @@ class NetworkScanApp(QMainWindow):
         """)
         self.log_browser.setFrameStyle(QFrame.NoFrame)
         act_layout.addWidget(self.log_browser)
-        self.activity_panel.setLayout(act_layout)
         
-        # Добавляем в сплиттер
+        self.activity_panel.setLayout(act_layout)
         bottom_splitter.addWidget(self.activity_panel)
         
-        # Запускаем поток чтения логов
+        # Запускаем слушатель
         self.start_log_listener()
 
         # Справа-снизу: Детальное описание
@@ -298,7 +302,7 @@ class NetworkScanApp(QMainWindow):
                 tx = float(tx)
                 rx = float(rx) 
 
-                self.act_label.setText(f"PROCESSING PKT: {ts}")
+                # self.act_label.setText(f"PROCESSING PKT: {ts}")
                 self.desc_browser.append(f"[{ts}] Traffic: IN={rx}KB, OUT={tx}KB | Integrity={score}")
                 
                 if alert != "NONE":
