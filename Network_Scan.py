@@ -129,6 +129,7 @@ class NetworkScanApp(QMainWindow):
         bottom_splitter.addWidget(self.activity_panel)
         
         # Запускаем слушатель
+        self.data_received.connect(self.update_action_monitor)
         self.start_log_listener()
 
         # Справа-снизу: Детальное описание
@@ -183,7 +184,7 @@ class NetworkScanApp(QMainWindow):
                     
                     # Передаем строку в метод обновления UI
                     # Используем QTimer.singleShot или встроенную потокобезопасность append
-                    self.update_action_monitor(line.strip())
+                    self.data_received.emit(line.strip())
 
         threading.Thread(target=follow_log, daemon=True).start()
 
@@ -222,9 +223,10 @@ class NetworkScanApp(QMainWindow):
 
     def on_node_clicked(self, item):
         # Теперь логгер зафиксирует твой клик в нижнем окне
-        self.update_action_monitor(f"USER_ACTION: Inspecting node {item.text()}")
+        self.data_received.emit(f"USER_ACTION: Inspecting node {item.text()}")
         
         # А это окно инспектора (среднее), добавляем информацию туда
+        self.desc_browser.clear()
         self.desc_browser.append(f"<span style='color:#58a6ff;'>[INFO]</span> Запрос данных по узлу {item.text()}...")
 
     def update_3d_candles(self):
