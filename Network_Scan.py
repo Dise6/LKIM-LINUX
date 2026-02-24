@@ -221,7 +221,10 @@ class NetworkScanApp(QMainWindow):
             self.nodes_list.addItem(item)
 
     def on_node_clicked(self, item):
-        self.act_label.setText(f"INSPECTING: {item.text()}")
+        # Теперь логгер зафиксирует твой клик в нижнем окне
+        self.update_action_monitor(f"USER_ACTION: Inspecting node {item.text()}")
+        
+        # А это окно инспектора (среднее), добавляем информацию туда
         self.desc_browser.append(f"<span style='color:#58a6ff;'>[INFO]</span> Запрос данных по узлу {item.text()}...")
 
     def update_3d_candles(self):
